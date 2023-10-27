@@ -4,7 +4,7 @@ on:
 
 jobs:
   contribs:
-    runs-on: ubuntu-22.04
+    runs-on: ses-edi-build-lu-x64-10
     name: Manifest
     steps:
       - name: Checkout the code

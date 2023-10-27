@@ -14,7 +14,7 @@ concurrency:
 jobs:
   cleanup:
     name: Cleanup
-    runs-on: ubuntu-22.04
+    runs-on: ses-edi-build-lu-x64-10
 
     steps:
     - name: Delete stale queued workflow runs

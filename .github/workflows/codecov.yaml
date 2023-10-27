@@ -12,7 +12,7 @@ jobs:
   codecov:
     if: github.repository_owner == 'zephyrproject-rtos'
     runs-on:
-      group: zephyr-runner-v2-linux-x64-4xlarge
+      group: ses-edi-build-lu-x64-11
     container:
       image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.14.20240823
       options: '--entrypoint /bin/bash'
@@ -131,7 +131,7 @@ jobs:
   codecov-results:
     name: "Publish Coverage Results"
     needs: codecov
-    runs-on: ubuntu-22.04
+    runs-on: ses-edi-build-lu-x64-10
     # the codecov job might be skipped, we don't need to run this job then
     if: success() || failure()
 

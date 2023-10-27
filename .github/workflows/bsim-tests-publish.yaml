@@ -8,7 +8,7 @@ on:
 jobs:
   bsim-test-results:
     name: "Publish BabbleSim Test Results"
-    runs-on: ubuntu-22.04
+    runs-on: ses-edi-build-lu-x64-10
     if: github.event.workflow_run.conclusion != 'skipped'
 
     steps:
