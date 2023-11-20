@@ -1,0 +1,10 @@
+identifier: adsp_sc834
+name: ADI ARM M33 ADSP-SC834
+type: mcu
+arch: arm
+ram: 1048
+flash: 1024
+toolchain:
+  - gnuarmemb
+  - zephyr
+  - xtools

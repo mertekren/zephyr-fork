@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: adsp_sc83x
+  vendor: adi
+  socs:
+    - name: adsp_sc834
+    - name: adsp_sc834w
+    - name: adsp_sc835
+    - name: adsp_sc835w
