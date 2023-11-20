@@ -1,0 +1,32 @@
+#
+# Copyright (c) 2023 Analog Devices Inc
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_ADSPSC83X
+	bool
+
+config SOC_FAMILY
+	default "adspsc83x" if SOC_FAMILY_ADSPSC83X
+
+config SOC_ADSP_SC834
+	bool
+	select SOC_FAMILY_ADSPSC83X
+
+config SOC_ADSP_SC834W
+	bool
+	select SOC_FAMILY_ADSPSC83X
+
+config SOC_ADSP_SC835
+	bool
+	select SOC_FAMILY_ADSPSC83X
+
+config SOC_ADSP_SC835W
+	bool
+	select SOC_FAMILY_ADSPSC83X
+
+config SOC
+	default "adsp_sc834" if SOC_ADSP_SC834
+	default "adsp_sc834w" if SOC_ADSP_SC834W
+	default "adsp_sc835" if SOC_ADSP_SC835
+	default "adsp_sc835w" if SOC_ADSP_SC835W

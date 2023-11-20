@@ -1,0 +1,11 @@
+#
+# Copyright 2023 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_ADSP_SC834
+
+config SOC
+	default "adsp_sc834"
+
+endif

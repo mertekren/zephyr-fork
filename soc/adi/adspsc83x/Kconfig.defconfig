@@ -1,0 +1,32 @@
+#
+# Copyright (c) 2023 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_ADSPSC83X
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 40000000
+
+config ADI_ICE_1000
+	bool
+	default y
+
+config ADI_ICE_2000
+	bool
+	default y
+
+config ADI_DEBUG
+	bool
+	default y
+
+config ADI_GPIO_HAS_PINT
+	bool
+	default y
+
+config NUM_IRQS
+	default 326
+
+rsource "Kconfig.defconfig.adsp*"
+
+endif # SOC_FAMILY_ADSPSC83X
