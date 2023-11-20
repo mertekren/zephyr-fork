@@ -1,0 +1,61 @@
+/*
+ * Copyright 2023 Analog Devices, Inc
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	cpus {
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	l1_iram: memory@40000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x00040000 DT_SIZE_M(1)>;
+		zephyr,memory-region = "L1_IRAM";
+	};
+
+	l1_dram: memory@28AC0000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x28AC0000 DT_SIZE_M(2)>;
+		zephyr,memory-region = "L1_DRAM";
+	};
+
+	l3_sram: memory@90000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x90000000 DT_SIZE_M(256)>;
+		zephyr,memory-region = "L3_SRAM";
+	};
+
+	soc {
+		peripheral@31000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x31000000 0x10000000>;
+
+			#include <adi/adsp/adsp_sc83xx-common.dtsi>
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

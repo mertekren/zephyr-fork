@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2023 Analog Devices
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+sysclk: system-clock {
+	compatible = "fixed-clock";
+	clock-frequency = <40000000>;
+	#clock-cells = <0>;
+};
+
+mhu0: mhu@2000 {
+	compatible = "arm,mhu";
+	reg = <0x2000 0x1000>;
+	interrupts = <6 3>;
+};
+
+mhu1: mhu@3000 {
+	compatible = "arm,mhu";
+	reg = <0x3000 0x1000>;
+	interrupts = <7 3>;
+};

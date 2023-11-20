@@ -1,0 +1,18 @@
+/*
+ * Copyright 2023 Analog Devices, Inc
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <adi/adsp/adsp_sc83x.dtsi>
+
+/{
+
+/* Memory L2 SRAM external size 1MB (core 1 SHAR-FX and core 2 Cortex m33) */
+
+	l2_sram: memory@20100000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20100000 DT_SIZE_M(1)>;
+		zephyr,memory-region = "L2_SRAM";
+	};
+};
