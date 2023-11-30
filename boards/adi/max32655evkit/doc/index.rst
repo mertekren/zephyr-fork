@@ -105,6 +105,8 @@ Below are the interfaces supported by Zephyr on MAX32655EVKIT.
 +-----------+------------+-------------------------------------+
 | RTC       | on-chip    | Real Time Clock                     |
 +-----------+------------+-------------------------------------+
+| W1        | on-chip    | one wire master                     |
++-----------+------------+-------------------------------------+
 
 Connections and IOs
 ===================
