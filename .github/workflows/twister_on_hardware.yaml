@@ -1,4 +1,4 @@
-name: Run tests with twister
+name: Run tests with twister on hardware
 
 on:
   push:
