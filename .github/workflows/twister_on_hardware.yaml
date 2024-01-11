@@ -139,6 +139,7 @@ jobs:
       TWISTER_COMMON: ' --force-color --inline-logs -v -N -M --retry-failed 3 '
       DAILY_OPTIONS: ' -M --build-only --all --show-footprint'
       PR_OPTIONS: ' --clobber-output --integration'
+      PR_EXCLUDE_OPTIONS: ' -e mcumgr -e cmsis_dsp -e net -e posix -e kernel -e bluetooth -e test_framework'
       PUSH_OPTIONS: ' --clobber-output -M --show-footprint'
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
@@ -241,7 +242,7 @@ jobs:
           rm -f testplan.json
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-          ./scripts/twister --device-testing --hardware-map ./zephyr-runner-configurations/${{ matrix.runner }}.yml  ${TWISTER_COMMON} ${PR_OPTIONS}
+          ./scripts/twister --device-testing --hardware-map ./zephyr-runner-configurations/${{ matrix.runner }}.yml  ${TWISTER_COMMON} ${PR_OPTIONS} ${PR_EXCLUDE_OPTIONS}
           if [ "${{matrix.subset}}" = "1" -a ${{needs.twister-build-prep.outputs.fullrun}} = 'True' ]; then
             ./scripts/zephyr_module.py --twister-out module_tests.args
             if [ -s module_tests.args ]; then
