@@ -182,6 +182,10 @@ jobs:
           west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
           west forall -c 'git reset --hard HEAD'
 
+      - name: Get Runner Configurations
+        run: |
+          git clone https://github.com/adi-innersource/zephyr-runner-configurations.git
+
       - name: Check Environment
         run: |
           cmake --version
