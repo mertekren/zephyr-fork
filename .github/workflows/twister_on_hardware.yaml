@@ -43,6 +43,7 @@ jobs:
       TESTS_PER_BUILDER: 700
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
+      GIT_ASKPASS: ${{ secrets.GH_REPO_ACCESS_TOKEN_ZEPHYR }}
     steps:
       - name: Apply container owner mismatch workaround
         run: |
@@ -75,6 +76,7 @@ jobs:
           rm -fr ".git/rebase-apply"
           git rebase origin/${BASE_REF}
           git log  --pretty=oneline | head -n 10
+          git config --global url."https://${GIT_ASKPASS}@github.com/".insteadOf "https://github.com/"
           west init -l . || true
           west config manifest.group-filter -- +ci,+optional
           west config --global update.narrow true
