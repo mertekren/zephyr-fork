@@ -29,6 +29,7 @@ jobs:
       options: '--entrypoint /bin/bash'
       volumes:
         - /repo-cache/zephyrproject:/github/cache/zephyrproject
+        - /home/ubuntu/actions-runner/workspace/_actions:/__w/_actions
     outputs:
       subset: ${{ steps.output-services.outputs.subset }}
       size: ${{ steps.output-services.outputs.size }}
@@ -43,8 +44,15 @@ jobs:
       TESTS_PER_BUILDER: 700
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
-      GIT_ASKPASS: ${{ secrets.GH_REPO_ACCESS_TOKEN_ZEPHYR }}
     steps:
+      - name: Get Access Token
+        id: get_access_token
+        uses: adi-innersource/generate-github-app-token-action@v1
+        env:
+          GH_APP_PEM: ${{ secrets.GH_APP_PEM }}
+          GH_APP_ID: ${{ vars.GH_APP_ID }}
+          GH_APP_INSTALLATION_ID: ${{ vars.GH_APP_INSTALLATION_ID }}
+
       - name: Apply container owner mismatch workaround
         run: |
           # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
@@ -76,7 +84,7 @@ jobs:
           rm -fr ".git/rebase-apply"
           git rebase origin/${BASE_REF}
           git log  --pretty=oneline | head -n 10
-          git config --global url."https://${GIT_ASKPASS}@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://${generatedAccessToken}:${generatedAccessToken}@github.com/".insteadOf "https://github.com/"
           west init -l . || true
           west config manifest.group-filter -- +ci,+optional
           west config --global update.narrow true
@@ -130,6 +138,7 @@ jobs:
       options: '-t -i --privileged -v /dev/bus/usb:/dev/bus/usb --entrypoint /bin/bash'
       volumes:
         - /repo-cache/zephyrproject:/github/cache/zephyrproject
+        - /home/ubuntu/actions-runner/workspace/_actions:/__w/_actions
     strategy:
       fail-fast: false
       matrix:
@@ -145,8 +154,14 @@ jobs:
       PUSH_OPTIONS: ' --clobber-output -M --show-footprint'
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
-      GIT_ASKPASS: ${{ secrets.GH_REPO_ACCESS_TOKEN_ZEPHYR }}
     steps:
+      - name: Get Access Token
+        uses: adi-innersource/generate-github-app-token-action@v1
+        env:
+          GH_APP_PEM: ${{ secrets.GH_APP_PEM }}
+          GH_APP_ID: ${{ vars.GH_APP_ID }}
+          GH_APP_INSTALLATION_ID: ${{ vars.GH_APP_INSTALLATION_ID }}
+
       - name: Apply container owner mismatch workaround
         run: |
           # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
@@ -178,7 +193,7 @@ jobs:
             git log  --pretty=oneline | head -n 10
           fi
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          git config --global url."https://${GIT_ASKPASS}@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://${generatedAccessToken}:${generatedAccessToken}@github.com/".insteadOf "https://github.com/"
           west init -l . || true
           west config manifest.group-filter -- +ci,+optional
           west config --global update.narrow true
