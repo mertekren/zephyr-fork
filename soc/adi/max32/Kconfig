@@ -15,6 +15,7 @@ config SOC_FAMILY_MAX32_M4
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select CLOCK_CONTROL
+	select HAS_PM
 
 config SOC_FAMILY_MAX32_RV32
 	select RISCV

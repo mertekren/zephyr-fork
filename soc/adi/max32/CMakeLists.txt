@@ -5,6 +5,7 @@ zephyr_include_directories(${ZEPHYR_BASE}/drivers)
 zephyr_include_directories(common)
 zephyr_sources(soc.c)
 
+zephyr_library_sources_ifdef(CONFIG_PM power.c)
 zephyr_linker_sources_ifdef(CONFIG_SOC_FLASH_MAX32 SECTIONS flash.ld)
 
 if(CONFIG_ARM)
