@@ -19,6 +19,7 @@
 
 #include <rtc.h>
 #include <time.h>
+#include <wrap_max32_lp.h>
 
 #include "rtc_utils.h"
 
@@ -393,6 +394,9 @@ static int rtc_max32_init(const struct device *dev)
 		IRQ_CONNECT(DT_INST_IRQN(_num), DT_INST_IRQ(_num, priority), rtc_max32_isr,        \
 			    DEVICE_DT_INST_GET(_num), 0);                                          \
 		irq_enable(DT_INST_IRQN(_num));                                                    \
+		if (DT_INST_PROP(_num, wakeup_source)) {					   \
+			MXC_LP_EnableRTCAlarmWakeup();						   \
+		}										   \
 	};                                                                                         \
 	static const struct max32_rtc_config rtc_max32_config_##_num = {                           \
 		.regs = (mxc_rtc_regs_t *)DT_INST_REG_ADDR(_num),                                  \
