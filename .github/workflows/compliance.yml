@@ -17,6 +17,31 @@ jobs:
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
+    - name: Remove Possible Existing Access Token
+      continue-on-error: true
+      run: |
+        # Token is generated at the run time and at the end of process it is expires,
+        # storing it in global config causes duplication line in config file
+        # so that possible existing one shall be deleted before generating new one
+        # otherwiser autantication will be failed.
+        existingTokenURL=$(git config --global --get-regexp url.*@github.com/.insteadOf)
+        echo "All Token:${existingTokenURL}"
+        for item in $(echo ${existingTokenURL}); do
+          if [ ${item} == "https://github.com/" ]; then
+            continue
+          fi
+          echo "Removing: ${item}"
+          git config --global --unset-all "${item}"
+        done
+
+    - name: Get Access Token
+      id: get_access_token
+      uses: adi-innersource/generate-github-app-token-action@v1
+      env:
+        GH_APP_PEM: ${{ secrets.GH_APP_PEM }}
+        GH_APP_ID: ${{ vars.GH_APP_ID }}
+        GH_APP_INSTALLATION_ID: ${{ vars.GH_APP_INSTALLATION_ID }}
+
     - name: Checkout the code
       uses: actions/checkout@v4
       with:
@@ -47,6 +72,7 @@ jobs:
       run: |
         git config --global user.email "you@example.com"
         git config --global user.name "Your Name"
+        git config --global url."https://${generatedAccessToken}:${generatedAccessToken}@github.com/".insteadOf "https://github.com/"
         git remote -v
         # Ensure there's no merge commits in the PR
         [[ "$(git rev-list --merges --count origin/${BASE_REF}..)" == "0" ]] || \
@@ -58,6 +84,8 @@ jobs:
         west init -l . || true
         west config manifest.group-filter -- +ci,-optional
         west update -o=--depth=1 -n 2>&1 1> west.update.log || west update -o=--depth=1 -n 2>&1 1> west.update2.log
+        # Remove token that used by this session
+        git config --global --unset-all url."https://${generatedAccessToken}:${generatedAccessToken}@github.com/".insteadOf
 
     - name: Check for PR description
       if: ${{ github.event.pull_request.body == '' }}

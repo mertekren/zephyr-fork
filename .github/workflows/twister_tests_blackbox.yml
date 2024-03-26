@@ -36,6 +36,31 @@ jobs:
         #        GitHub comes up with a fundamental fix for this problem.
         git config --global --add safe.directory ${GITHUB_WORKSPACE}
 
+    - name: Remove Possible Existing Access Token
+      continue-on-error: true
+      run: |
+        # Token is generated at the run time and at the end of process it is expires,
+        # storing it in global config causes duplication line in config file
+        # so that possible existing one shall be deleted before generating new one
+        # otherwiser autantication will be failed.
+        existingTokenURL=$(git config --global --get-regexp url.*@github.com/.insteadOf)
+        echo "All Token:${existingTokenURL}"
+        for item in $(echo ${existingTokenURL}); do
+          if [ ${item} == "https://github.com/" ]; then
+            continue
+          fi
+          echo "Removing: ${item}"
+          git config --global --unset-all "${item}"
+        done
+
+    - name: Get Access Token
+      id: get_access_token
+      uses: adi-innersource/generate-github-app-token-action@v1
+      env:
+        GH_APP_PEM: ${{ secrets.GH_APP_PEM }}
+        GH_APP_ID: ${{ vars.GH_APP_ID }}
+        GH_APP_INSTALLATION_ID: ${{ vars.GH_APP_INSTALLATION_ID }}
+
     - name: Checkout
       uses: actions/checkout@v4
 
@@ -43,7 +68,7 @@ jobs:
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-        git config --global url."https://${{ secrets.ZB_GITHUB_TOKEN }}@github.com".insteadof https://github.com
+        git config --global url."https://${generatedAccessToken}:${generatedAccessToken}@github.com/".insteadOf "https://github.com/"
 
         west init -l . || true
         # we do not depend on any hals, tools or bootloader, save some time and space...
@@ -53,6 +78,9 @@ jobs:
         west forall -c 'git reset --hard HEAD'
 
         echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
+
+        # Remove token that used by this session
+        git config --global --unset-all url."https://${generatedAccessToken}:${generatedAccessToken}@github.com/".insteadOf
 
     - name: Set Up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5

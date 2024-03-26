@@ -7,6 +7,31 @@ jobs:
     runs-on: ses-edi-build-lu-x64-10
     name: Manifest
     steps:
+      - name: Remove Possible Existing Access Token
+        continue-on-error: true
+        run: |
+          # Token is generated at the run time and at the end of process it is expires,
+          # storing it in global config causes duplication line in config file
+          # so that possible existing one shall be deleted before generating new one
+          # otherwiser autantication will be failed.
+          existingTokenURL=$(git config --global --get-regexp url.*@github.com/.insteadOf)
+          echo "All Token:${existingTokenURL}"
+          for item in $(echo ${existingTokenURL}); do
+            if [ ${item} == "https://github.com/" ]; then
+              continue
+            fi
+            echo "Removing: ${item}"
+            git config --global --unset-all "${item}"
+          done
+
+      - name: Get Access Token
+        id: get_access_token
+        uses: adi-innersource/generate-github-app-token-action@v1
+        env:
+          GH_APP_PEM: ${{ secrets.GH_APP_PEM }}
+          GH_APP_ID: ${{ vars.GH_APP_ID }}
+          GH_APP_INSTALLATION_ID: ${{ vars.GH_APP_INSTALLATION_ID }}
+
       - name: Checkout the code
         uses: actions/checkout@v4
         with:
@@ -23,12 +48,15 @@ jobs:
           pip3 install west
           git config --global user.email "you@example.com"
           git config --global user.name "Your Name"
+          git config --global url."https://${generatedAccessToken}:${generatedAccessToken}@github.com/".insteadOf "https://github.com/"
           west init -l . || true
+          # Remove token that used by this session
+          git config --global --unset-all url."https://${generatedAccessToken}:${generatedAccessToken}@github.com/".insteadOf
 
       - name: Manifest
         uses: zephyrproject-rtos/action-manifest@v1.3.1
         with:
-          github-token: ${{ secrets.ZB_GITHUB_TOKEN }}
+          github-token: ${{ env.generatedAccessToken }}
           manifest-path: 'west.yml'
           checkout-path: 'zephyrproject/zephyr'
           use-tree-checkout: 'true'
