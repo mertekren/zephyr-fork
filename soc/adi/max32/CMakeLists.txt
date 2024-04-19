@@ -7,4 +7,8 @@ zephyr_sources(soc.c)
 
 zephyr_linker_sources_ifdef(CONFIG_SOC_FLASH_MAX32 SECTIONS flash.ld)
 
-set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
+if(CONFIG_ARM)
+  set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
+elseif(CONFIG_RISCV)
+  set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/riscv/common/linker.ld CACHE INTERNAL "")
+endif()
