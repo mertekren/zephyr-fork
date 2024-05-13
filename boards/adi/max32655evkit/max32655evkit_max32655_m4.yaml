@@ -22,4 +22,4 @@ supported:
   - rtc
   - w1
 ram: 128
-flash: 512
+flash: 256
