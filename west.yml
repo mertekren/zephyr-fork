@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: analogdevicesinc
+      url-base: https://github.com/analogdevicesinc
 
   group-filter: [-babblesim, -optional]
 
@@ -137,7 +139,8 @@ manifest:
       groups:
         - fs
     - name: hal_adi
-      revision: a3eecfde1c76d38312b94fd346c7ba9fe2661992
+      remote: analogdevicesinc
+      revision: 44efe90d39d1355d85ead4f2bdce03a216944bfc
       path: modules/hal/adi
       groups:
         - hal
