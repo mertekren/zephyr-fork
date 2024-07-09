@@ -12,6 +12,8 @@ supported:
   - serial
   - trng
   - i2c
+  - flash
+  - w1
   - dma
   - watchdog
   - spi

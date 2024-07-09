@@ -57,6 +57,7 @@
 		sw0 = &pb1;
 		sw1 = &pb2;
 		watchdog0 = &wdt0;
+		rtc = &rtc;
 	 };
 
 	 mipi_dbi {
@@ -106,6 +107,13 @@
 };
 
 &clk_ipo {
+	status = "okay";
+};
+
+/*
+ * ERTCO requires for RTC
+ */
+&clk_ertco {
 	status = "okay";
 };
 
