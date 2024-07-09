@@ -13,6 +13,7 @@ supported:
   - trng
   - i2c
   - dma
+  - flash
   - watchdog
   - spi
   - adc
