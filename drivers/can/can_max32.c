@@ -98,10 +98,10 @@ static void can_max32_convert_req_to_canframe(const mxc_can_req_t *req, struct c
 	msg->flags = 0;
 
 	if (info->msg_id & MXC_CAN_MSG_INFO_IDE_BIT) {
-		msg->id = MXC_CAN_EXTENDED_ID(info->msg_id);
+		msg->id = (info->msg_id & CAN_EXT_ID_MASK);
 		msg->flags |= CAN_FRAME_IDE;
 	} else {
-		msg->id = MXC_CAN_STANDARD_ID(info->msg_id);
+		msg->id = (info->msg_id & CAN_STD_ID_MASK);
 	}
 
 	if (info->rtr) {
@@ -506,7 +506,7 @@ static int can_max32_recover(const struct device *dev, k_timeout_t timeout)
 		return -ENETDOWN;
 	}
 
-	return -ENOTSUP;
+	return -ENOSYS;
 }
 #endif
 
