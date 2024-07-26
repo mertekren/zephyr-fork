@@ -811,4 +811,4 @@
 		pinmux = <MAX32_PINMUX(0, 30, AF3)>;
 		low-power-enable;
 	};
-}
+};
