@@ -12,8 +12,11 @@ supported:
   - i2c
   - gpio
   - serial
+  - flash
   - trng
   - watchdog
+  - rtc
+  - w1
   - adc
   - counter
   - pwm
