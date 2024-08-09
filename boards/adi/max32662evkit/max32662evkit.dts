@@ -48,6 +48,7 @@
 		led0 = &led1;
 		sw0 = &pb1;
 		watchdog0 = &wdt0;
+		rtc = &rtc;
 	};
 
 	mipi_dbi {
@@ -102,6 +103,13 @@
 	status = "okay";
 };
 
+/*
+ * ERTCO requires for RTC
+ */
+&clk_ertco {
+	status = "okay";
+};
+
 &gpio0 {
 	status = "okay";
 };
@@ -118,6 +126,11 @@
 
 &wdt0 {
 	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+	alarms-count = <1>;
 };
 
 &spi0 {
