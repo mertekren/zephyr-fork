@@ -57,6 +57,7 @@
 		led1 = &led2;
 		sw0 = &pb1;
 		sw1 = &pb2;
+		watchdog0 = &wdt0;
 	};
 };
 
@@ -89,6 +90,10 @@
 	status = "okay";
 	pinctrl-0 = <&i2c2a_scl_p0_18 &i2c2a_sda_p0_19>;
 	pinctrl-names = "default";
+};
+
+&wdt0 {
+	status = "okay";
 };
 
 &trng {
