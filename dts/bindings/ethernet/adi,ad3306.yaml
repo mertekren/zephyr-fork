@@ -1,0 +1,67 @@
+# Copyright (c) 2024 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  AD3306 10BASE-T1S Ethernet MAC-PHY with SPI Interface
+
+  example:
+
+  ad3306: ad3306@0 {
+          compatible = "adi,ad3306";
+          reg = <0x0>;
+          spi-max-frequency = <DT_FREQ_M(25)>;
+          int-gpios   = <&gpioc 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+          wake-gpios = <&gpioc 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+          local-mac-address = [ 00 E0 22 FE DA D0 ];
+          plca-enable;
+          plca-node-id = <1>;
+          plca-node-count = <8>;
+          plca-max-burst-count = <0>;
+          plca-burst-timer = <0x80>;
+          plca-to-timer = <0x20>;
+          status = "okay";
+  };
+
+compatible: "adi,ad3306"
+
+include: [spi-device.yaml, ethernet-controller.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The interrupt (IRQn) pin of AD3306 is active low.
+      If connected directly the MCU pin should be configured
+      as active low.
+  wake-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      WAKE pin of AD3306 is used to trigger a wake-up of the
+      local PHY and to optionally send a WUP over the network.
+      By default, it is active high.
+  plca-enable:
+    type: boolean
+    description: Enable/Disable PLCA.
+  plca-node-id:
+    type: int
+    description: PLCA Node ID.
+  plca-node-count:
+    type: int
+    description: PLCA Node Count.
+  plca-max-burst-count:
+    type: int
+    description: PLCA Max Burst Count.
+  plca-burst-timer:
+    type: int
+    description: PLCA Burst Timer Value.
+  plca-to-timer:
+    type: int
+    description: PLCA TO Timer Value.
+  tx-cut-through-en:
+    type: boolean
+    description: Transmit Cut-Through Enable.
+  rx-cut-through-en:
+    type: boolean
+    description: Receive Cut-Through Enable.

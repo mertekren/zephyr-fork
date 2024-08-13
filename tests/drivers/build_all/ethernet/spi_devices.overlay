@@ -36,6 +36,7 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			test_spi_enc28j60: enc28j60@0 {
@@ -119,6 +120,24 @@
 						status = "okay";
 					};
 				};
+			};
+
+			test_spi_ad3306: ad3306@5 {
+				compatible = "adi,ad3306";
+				reg = <0x5>;
+				spi-max-frequency = <25000000>;
+				int-gpios   = <&test_gpio 0 0 >;
+				wake-gpios = <&test_gpio 0 0 >;
+				local-mac-address = [ 00 E0 22 FE DA D0 ];
+				plca-enable;
+				plca-node-id = <1>;
+				plca-node-count = <8>;
+				plca-max-burst-count = <0>;
+				plca-burst-timer = <0x80>;
+				plca-to-timer = <0x20>;
+				tx-cut-through-en;
+				rx-cut-through-en;
+				status = "okay";
 			};
 		};
 	};
