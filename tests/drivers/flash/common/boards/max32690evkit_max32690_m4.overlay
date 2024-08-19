@@ -11,13 +11,13 @@
 		#size-cells = <1>;
 
 		code_partition: partition@0 {
-			reg = <0x0 DT_SIZE_M(3)>;
+			reg = <0x0 DT_SIZE_M(2)>;
 			read-only;
 		};
 
-		storage_partition: partition@300000 {
+		storage_partition: partition@200000 {
 			label = "storage";
-			reg = <0x300000 DT_SIZE_K(256)>;
+			reg = <0x200000 DT_SIZE_M(1)>;
 		};
 	};
 };
