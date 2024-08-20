@@ -40,7 +40,7 @@ if SOC_FAMILY_MAX32
 
 config MAX32_ON_ENTER_CPU_IDLE_HOOK
 	bool "CPU idle hook enable"
-	default y
+	default y if !PM
 	imply ARM_ON_ENTER_CPU_IDLE_HOOK
 	depends on ARM
 	help
