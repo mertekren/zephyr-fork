@@ -1,0 +1,184 @@
+name: Twister build
+
+on:
+  workflow_call:
+    inputs:
+      name:
+        required: true
+        type: string
+      runner:
+        required: true
+        type: string
+      image:
+        required: true
+        type: string
+      options:
+        required: true
+        type: string
+      zephyr_sdk_install_dir:
+        required: true
+        type: string
+      twister_common:
+        required: true
+        type: string
+
+jobs:
+  twister-build:
+    name: ${{ inputs.name }}
+    runs-on: ${{ inputs.runner }}
+    container:
+      image: ${{ inputs.image }}
+      options: ${{ inputs.options }}
+    env:
+      ZEPHYR_SDK_INSTALL_DIR: ${{ inputs.zephyr_sdk_install_dir }}
+      BSIM_OUT_PATH: /opt/bsim/
+      BSIM_COMPONENTS_PATH: /opt/bsim/components
+      TWISTER_COMMON: ${{ inputs.twister_common }}
+      DAILY_OPTIONS: ' -M --build-only --all --show-footprint'
+      PR_OPTIONS: ' --clobber-output --integration'
+      PR_EXCLUDE_OPTIONS: ' -e mcumgr -e cmsis_dsp -e net -e posix -e kernel -e bluetooth -e test_framework'
+      PUSH_OPTIONS: ' --clobber-output -M --show-footprint'
+      COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+      BASE_REF: ${{ github.base_ref }}
+    steps:
+      - name: Get Access Token
+        uses: adi-innersource/generate-github-app-token-action@v1
+        env:
+          GH_APP_PEM: ${{ secrets.GH_APP_PEM }}
+          GH_APP_ID: ${{ vars.GH_APP_ID }}
+          GH_APP_INSTALLATION_ID: ${{ vars.GH_APP_INSTALLATION_ID }}
+
+      - name: Apply container owner mismatch workaround
+        run: |
+          # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
+          #        match the container user UID because of the way GitHub
+          #        Actions runner is implemented. Remove this workaround when
+          #        GitHub comes up with a fundamental fix for this problem.
+          git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
+      - name: Clone cached Zephyr repository
+        continue-on-error: true
+        run: |
+          git clone --shared /github/cache/zephyrproject/zephyr .
+          git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Environment Setup
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request_target" ]; then
+            git config --global user.email "bot@zephyrproject.org"
+            git config --global user.name "Zephyr Builder"
+            rm -fr ".git/rebase-apply"
+            git rebase origin/${BASE_REF}
+            git log  --pretty=oneline | head -n 10
+          fi
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          git config --global url."https://${generatedAccessToken}:${generatedAccessToken}@github.com/".insteadOf "https://github.com/"
+          west init -l . || true
+          west config manifest.group-filter -- +ci,+optional
+          west config --global update.narrow true
+          west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
+          west forall -c 'git reset --hard HEAD'
+
+      - name: Get Runner Configurations
+        run: |
+          git clone https://github.com/adi-innersource/zephyr-runner-configurations.git
+
+      - name: Check Environment
+        run: |
+          cmake --version
+          gcc --version
+          ls -la
+          echo "github.ref: ${{ github.ref }}"
+          echo "github.base_ref: ${{ github.base_ref }}"
+          echo "github.ref_name: ${{ github.ref_name }}"
+
+      - name: Prepare ccache timestamp/data
+        id: ccache_cache_timestamp
+        shell: cmake -P {0}
+        run: |
+          string(TIMESTAMP current_date "%Y-%m-%d-%H;%M;%S" UTC)
+          string(REPLACE "/" "_" repo ${{ github.repository }})
+          string(REPLACE "-" "_" repo2 ${repo})
+          file(APPEND $ENV{GITHUB_OUTPUT} "repo=${repo2}\n")
+
+      - name: use cache
+        id: cache-ccache
+        uses: zephyrproject-rtos/action-s3-cache@v1.2.0
+        continue-on-error: true
+        with:
+          key: ${{ steps.ccache_cache_timestamp.outputs.repo }}-${{ github.ref_name }}-${{ github.event_name }}-${{ matrix.subset }}-ccache
+          path: /github/home/.cache/ccache
+          aws-s3-bucket: ccache.zephyrproject.org
+          aws-access-key-id: ${{ vars.AWS_CCACHE_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_CCACHE_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: ccache stats initial
+        run: |
+          mkdir -p /github/home/.cache
+          test -d github/home/.cache/ccache && rm -rf /github/home/.cache/ccache && mv github/home/.cache/ccache /github/home/.cache/ccache
+          ccache -M 10G -s
+
+      - if: github.event_name == 'push'
+        name: Run Tests with Twister (Push)
+        run: |
+          export ZEPHYR_BASE=${PWD}
+          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+          ./scripts/twister --device-testing --hardware-map ./zephyr-runner-configurations/${{ inputs.runner }}.yml ${TWISTER_COMMON} ${PUSH_OPTIONS}
+          if [ "${{ matrix.subset }}" = "1" ]; then
+            ./scripts/zephyr_module.py --twister-out module_tests.args
+            if [ -s module_tests.args ]; then
+              ./scripts/twister +module_tests.args --outdir module_tests ${TWISTER_COMMON} ${PUSH_OPTIONS}
+            fi
+          fi
+
+      - if: github.event_name == 'pull_request_target'
+        name: Run Tests with Twister (Pull Request)
+        run: |
+          rm -f testplan.json
+          export ZEPHYR_BASE=${PWD}
+          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+          ./scripts/twister --device-testing --hardware-map ./zephyr-runner-configurations/${{ inputs.runner }}.yml  ${TWISTER_COMMON} ${PR_OPTIONS} ${PR_EXCLUDE_OPTIONS}
+          if [ "${{ matrix.subset }}" = "1" -a ${{ needs.twister-build-prep.outputs.fullrun }} = 'True' ]; then
+            ./scripts/zephyr_module.py --twister-out module_tests.args
+            if [ -s module_tests.args ]; then
+              ./scripts/twister +module_tests.args --outdir module_tests ${TWISTER_COMMON} ${PR_OPTIONS}
+            fi
+          fi
+
+      - if: github.event_name == 'schedule'
+        name: Run Tests with Twister (Daily)
+        run: |
+          export ZEPHYR_BASE=${PWD}
+          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+          ./scripts/twister --device-testing --hardware-map ./zephyr-runner-configurations/${{ inputs.runner }}.yml ${TWISTER_COMMON} ${DAILY_OPTIONS}
+          if [ "${{ matrix.subset }}" = "1" ]; then
+            ./scripts/zephyr_module.py --twister-out module_tests.args
+            if [ -s module_tests.args ]; then
+              ./scripts/twister +module_tests.args --outdir module_tests ${TWISTER_COMMON} ${DAILY_OPTIONS}
+            fi
+          fi
+
+      - name: ccache stats post
+        run: |
+          ccache -p
+          ccache -s
+
+      - name: Upload Unit Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Unit Test Results (Subset ${{ matrix.subset }})
+          if-no-files-found: ignore
+          path: |
+            twister-out/twister.xml
+            twister-out/twister.json
+            module_tests/twister.xml
+            testplan.json
