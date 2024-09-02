@@ -1,0 +1,54 @@
+name: Run tests with twister on hardware
+
+on:
+  push:
+    branches:
+      - main
+      - adi-main*
+      - v*-branch
+      - collab-*
+  pull_request_target:
+    branches:
+      - main
+      - adi-main*
+      - v*-branch
+      - collab-*
+  schedule:
+    # Run at 03:00 UTC on every Sunday
+    - cron: '0 3 * * 0'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  twister-build-prep:
+    uses: ./.github/workflows/twister_build_prep.yml
+    with:
+      runner: ses-ist-build-lu-x64-1
+      image: artifactory.analog.com:6556/zephyrproject-rtos/ci:v1.0.1-amd64
+      options: --entrypoint /bin/bash --volume /repo-cache/zephyrproject:/github/cache/zephyrproject --volume /home/ubuntu/actions-runner/workspace/_actions:/__w/_actions
+      zephyr_sdk_install_dir: /opt/toolchains/zephyr-sdk-0.16.4
+
+  twister-build:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ses-ist-build-lu-x64-1, ses-ist-build-lu-x64-2]
+    needs: twister-build-prep
+    if: needs.twister-build-prep.outputs.size != 0
+    uses: ./.github/workflows/twister_build.yml
+    with:
+      name: Runs on ${{ matrix.runner }}
+      runner: ${{ matrix.runner }}
+      image: artifactory.analog.com:6556/zephyrproject-rtos/ci:v1.0.1-amd64
+      options: -t -i --privileged -v /dev/bus/usb:/dev/bus/usb --entrypoint /bin/bash --volume /repo-cache/zephyrproject:/github/cache/zephyrproject --volume /home/ubuntu/actions-runner/workspace/_actions:/__w/_actions
+      zephyr_sdk_install_dir: /opt/toolchains/zephyr-sdk-0.16.4
+      twister_common: --force-color --inline-logs -v -N -M --retry-failed 3 --timeout-multiplier 3 -T tests/drivers/ -T tests/subsys/ --extra-args CONFIG_BOOT_DELAY=100
+    secrets: inherit
+
+  twister-test-results:
+    # the build-and-test job might be skipped, we don't need to run this job then
+    if: success() || failure()
+    needs: twister-build
+    uses: ./.github/workflows/twister_test_results.yml
