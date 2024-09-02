@@ -1,0 +1,48 @@
+name: Twister test results
+
+on:
+  workflow_call:
+
+jobs:
+  twister-test-results:
+    name: "Publish Unit Tests Results"
+    env:
+      ELASTICSEARCH_KEY: ${{ secrets.ELASTICSEARCH_KEY }}
+      ELASTICSEARCH_SERVER: "https://elasticsearch.zephyrproject.io:443"
+    runs-on: ubuntu-22.04
+
+    steps:
+      # Needed for opensearch and upload script
+      - if: github.event_name == 'push' || github.event_name == 'schedule'
+        name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+
+      - name: Merge Test Results
+        run: |
+          pip3 install junitparser junit2html
+          junitparser merge artifacts/*/*/twister.xml junit.xml
+          junit2html junit.xml junit.html
+
+      - name: Upload Unit Test Results in HTML
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: HTML Unit Test Results
+          if-no-files-found: ignore
+          path: |
+            junit.html
+
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          check_name: Unit Test Results
+          files: "**/twister.xml"
+          comment_mode: off
