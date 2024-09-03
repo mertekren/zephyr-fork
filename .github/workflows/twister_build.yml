@@ -9,6 +9,9 @@ on:
       runner:
         required: true
         type: string
+      board:
+        required: false
+        type: string
       image:
         required: true
         type: string
@@ -21,6 +24,9 @@ on:
       twister_common:
         required: true
         type: string
+      is_build_only:
+        required: true
+        type: boolean
 
 jobs:
   twister-build:
@@ -86,7 +92,8 @@ jobs:
           west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
           west forall -c 'git reset --hard HEAD'
 
-      - name: Get Runner Configurations
+      - if: ${{ !inputs.is_build_only }}
+        name: Get Runner Configurations
         run: |
           git clone https://github.com/adi-innersource/zephyr-runner-configurations.git
 
@@ -126,7 +133,7 @@ jobs:
           test -d github/home/.cache/ccache && rm -rf /github/home/.cache/ccache && mv github/home/.cache/ccache /github/home/.cache/ccache
           ccache -M 10G -s
 
-      - if: github.event_name == 'push'
+      - if: github.event_name == 'push' && !inputs.is_build_only
         name: Run Tests with Twister (Push)
         run: |
           export ZEPHYR_BASE=${PWD}
@@ -139,7 +146,21 @@ jobs:
             fi
           fi
 
-      - if: github.event_name == 'pull_request_target'
+      - if: github.event_name == 'pull_request_target' && inputs.is_build_only
+        name: Run Tests with Twister Build Only (Pull Request)
+        run: |
+          rm -f testplan.json
+          export ZEPHYR_BASE=${PWD}
+          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+          ./scripts/twister -p ${{ inputs.board }} ${TWISTER_COMMON} --clobber-output -M --build-only --show-footprint
+          if [ "${{ matrix.subset }}" = "1" -a ${{ needs.twister-build-prep.outputs.fullrun }} = 'True' ]; then
+            ./scripts/zephyr_module.py --twister-out module_tests.args
+            if [ -s module_tests.args ]; then
+              ./scripts/twister +module_tests.args --outdir module_tests ${TWISTER_COMMON} --clobber-output -M --build-only --show-footprint
+            fi
+          fi
+
+      - if: github.event_name == 'pull_request_target' && !inputs.is_build_only
         name: Run Tests with Twister (Pull Request)
         run: |
           rm -f testplan.json
@@ -153,7 +174,7 @@ jobs:
             fi
           fi
 
-      - if: github.event_name == 'schedule'
+      - if: github.event_name == 'schedule' && !inputs.is_build_only
         name: Run Tests with Twister (Daily)
         run: |
           export ZEPHYR_BASE=${PWD}

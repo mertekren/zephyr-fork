@@ -1,0 +1,57 @@
+name: Build tests with twister
+
+on:
+  push:
+    branches:
+      - main
+      - adi-main*
+      - v*-branch
+      - collab-*
+  pull_request_target:
+    branches:
+      - main
+      - adi-main*
+      - v*-branch
+      - collab-*
+  schedule:
+    # Run at 03:00 UTC on every Sunday
+    - cron: '0 3 * * 0'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  twister-build-prep:
+    uses: ./.github/workflows/twister_build_prep.yml
+    with:
+      runner: zephyr-16-core-large
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.13.20240601
+      options: --entrypoint /bin/bash
+      zephyr_sdk_install_dir: /opt/toolchains/zephyr-sdk-0.16.8
+
+  twister-build:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [zephyr-16-core-large]
+        board: [max32655evkit/max32655/m4, max32655fthr/max32655/m4, max32662evkit, max32666evkit/max32666/cpu0, max32666fthr/max32666/cpu0, max32670evkit, max32672evkit, max32672fthr, max32675evkit, max32680evkit/max32680/m4, max32690evkit/max32690/m4]
+    needs: twister-build-prep
+    if: needs.twister-build-prep.outputs.size != 0
+    uses: ./.github/workflows/twister_build.yml
+    with:
+      name: Board ${{ matrix.board }}
+      runner: ${{ matrix.runner }}
+      board: ${{ matrix.board }}
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.13.20240601
+      options: --entrypoint /bin/bash
+      zephyr_sdk_install_dir: /opt/toolchains/zephyr-sdk-0.16.8
+      twister_common: --force-color --inline-logs -v -N -M --retry-failed 3 --timeout-multiplier 3 -T samples/hello_world/ -T samples/basic/ -T samples/philosophers/ -T tests/lib/cpp/ -T samples/subsys/portability/cmsis_rtos_v2/
+      is_build_only: true
+    secrets: inherit
+
+  twister-test-results:
+    # the build-and-test job might be skipped, we don't need to run this job then
+    if: success() || failure()
+    needs: twister-build
+    uses: ./.github/workflows/twister_test_results.yml
