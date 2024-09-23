@@ -142,7 +142,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ses-ist-build-lu-x64-1]
+        runner: [ses-ist-build-lu-x64-1, ses-ist-build-lu-x64-2]
     env:
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.4
       BSIM_OUT_PATH: /opt/bsim/
