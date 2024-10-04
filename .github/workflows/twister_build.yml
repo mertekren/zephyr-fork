@@ -47,6 +47,23 @@ jobs:
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
     steps:
+      - name: Remove Possible Existing Access Token
+        continue-on-error: true
+        run: |
+          # Token is generated at the run time and at the end of process it is expires,
+          # storing it in global config causes duplication line in config file
+          # so that possible existing one shall be deleted before generating new one
+          # otherwiser autantication will be failed.
+          existingTokenURL=$(git config --global --get-regexp url.*@github.com/.insteadOf)
+          echo "All Token:${existingTokenURL}"
+          for item in $(echo ${existingTokenURL}); do
+            if [ ${item} == "https://github.com/" ]; then
+              continue
+            fi
+            echo "Removing: ${item}"
+            git config --global --unset-all "${item}"
+          done
+
       - name: Get Access Token
         uses: adi-innersource/generate-github-app-token-action@v1
         env:
